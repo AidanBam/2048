@@ -199,9 +199,12 @@ def ai():
 
 
 def get_reward(sim_move):
+    game_over = False
     tiles_next_to_others = 0
     simulated_score, simulated_board = simulate_move(sim_move)
     tiles_left = 0
+    if 0 not in simulated_board:
+        game_over = True
     for x_layer in simulated_board:
         for num in range(0,4):
             try:
@@ -229,8 +232,11 @@ def get_reward(sim_move):
         for y_num in x_layer:
             if y_num != 0:
                 tiles_left += 1
+        
 
     reward = ((simulated_score) * (tiles_next_to_others - tiles_left))
+    if game_over:
+        reward = -9999999999999998
     return reward
 
 run_game()
