@@ -1,9 +1,9 @@
 import random
-import time
-
 import pygame
 import lists_2048
+
 reset = False
+total_moves = 0
 
 color_list = lists_2048.color_list
 cord_list = lists_2048.cord_list()
@@ -107,7 +107,8 @@ def run_game():
     spawn_block()
     while running:
         if reset:
-            pygame.time.wait(1000)
+            total_moves = 0
+            pygame.time.wait(4000)
             running = True
             cord_list = lists_2048.cord_list()
             score = 0
@@ -117,6 +118,7 @@ def run_game():
             spawn_block()
             pygame.display.update()
         direction = ai()
+        pygame.time.wait(100)
         pygame.display.update()
         if direction:
             pygame.display.update()
@@ -131,8 +133,7 @@ def run_game():
                 running = False
 
 
-def simulate_move(direction):
-    board_copy = get_state()
+def simulate_move(direction, board_copy):
     score_copy = score
     x_change = 0
     y_change = 0
@@ -188,23 +189,31 @@ def get_state():
 
 
 def ai():
+    global total_moves
+    total_moves += 1
     best_move = None
-    best_reward = -9999999999999999
+    best_reward = -999999999999999999999999999999999999999999999999999999999999999999999999999999
+    simulated_state = get_state()
+
     for sim_move in ['down', 'up', 'left', 'right']:
-        get_reward(sim_move)
-        if get_reward(sim_move) > best_reward:
-            best_reward = get_reward(sim_move)
+        reward = get_reward(sim_move, simulated_state)
+        if reward > best_reward:
+            best_reward = reward
             best_move = sim_move
     return best_move
 
 
-def get_reward(sim_move):
+def get_reward(sim_move, simulated_board):
+    global total_moves
+    game_over_counter = 0
+    highest_num = 0
+    reward = 0
     game_over = False
     tiles_next_to_others = 0
-    simulated_score, simulated_board = simulate_move(sim_move)
+    simulated_score, simulated_board = simulate_move(sim_move, simulated_board)
+    #for sim_move in ['down', 'up', 'left', 'right']:
+        #simulated_score, simulated_board = simulate_move(sim_move, simulated_board)
     tiles_left = 0
-    if 0 not in simulated_board:
-        game_over = True
     for x_layer in simulated_board:
         for num in range(0,4):
             try:
@@ -228,15 +237,19 @@ def get_reward(sim_move):
                         tiles_next_to_others += 1
                 except:
                     pass
-
         for y_num in x_layer:
             if y_num != 0:
+                print(x_layer)
+                if y_num > highest_num:
+                    highest_num = y_num
                 tiles_left += 1
-        
-
-    reward = ((simulated_score) * (tiles_next_to_others - tiles_left))
-    if game_over:
-        reward = -9999999999999998
+    if tiles_left == 16:
+        game_over_reward = -100000000
+    else:
+        game_over_reward = 0
+    reward += ((simulated_score + (tiles_next_to_others * simulated_score) + (highest_num ** 2) - (tiles_left ** 3) / total_moves) + game_over_reward)
+    print(tiles_left)
+    print(reward)
     return reward
 
 run_game()
